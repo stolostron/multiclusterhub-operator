@@ -783,21 +783,28 @@ spec:
   # Finally: must-gather on failure + deprovision cluster
   # ===========================================================================
   finally:
-    - name: must-gather
+    # Tekton does not support runAfter in finally tasks on this cluster version.
+    # Must-gather and deprovision are combined into one task with two sequential
+    # steps so diagnostics always complete before the cluster is torn down.
+    - name: cleanup
       when:
         - input: $(tasks.resolve-ocp-version.results.matches)
           operator: in
           values: ["true"]
-        - input: $(tasks.status)
-          operator: in
-          values: ["Failed"]
       taskSpec:
+        params:
+          - name: claimName
+            type: string
+          - name: claimNamespace
+            type: string
+          - name: pipelineStatus
+            type: string
         volumes:
           - name: cluster-credentials
             secret:
               secretName: $(tasks.provision-cluster.results.secretRef)
         steps:
-          - name: gather
+          - name: must-gather
             image: quay.io/konflux-ci/konflux-test:latest
             volumeMounts:
               - name: cluster-credentials
@@ -805,9 +812,16 @@ spec:
             env:
               - name: KUBECONFIG
                 value: /credentials/kubeconfig
+              - name: PIPELINE_STATUS
+                value: $(params.pipelineStatus)
             script: |
               #!/usr/bin/env bash
               set +e
+
+              if [[ "${PIPELINE_STATUS}" != "Failed" ]]; then
+                echo "Pipeline succeeded — skipping must-gather."
+                exit 0
+              fi
 
               echo "=== Collecting must-gather diagnostics ==="
 
@@ -842,27 +856,55 @@ spec:
 
               echo "=== Must-gather complete ==="
 
-    - name: deprovision-cluster
-      runAfter:
-        - must-gather
-      when:
-        - input: $(tasks.resolve-ocp-version.results.matches)
-          operator: in
-          values: ["true"]
-      taskRef:
-        resolver: git
-        params:
-          - name: url
-            value: https://github.com/openshift/konflux-tasks
-          - name: revision
-            value: main
-          - name: pathInRepo
-            value: tasks/deprovision-ephemeral-cluster/0.1/deprovision-ephemeral-cluster.yaml
+          - name: deprovision
+            image: quay.io/konflux-ci/konflux-test:v1.4.52@sha256:aa2c97da9bb73a4e8d1c6b41950f8d902b74461be0e042debe89277fdc4ebe49
+            env:
+              - name: CLAIM_NAME
+                value: $(params.claimName)
+              - name: NAMESPACE
+                value: $(params.claimNamespace)
+              - name: CLUSTER_DEPROVISIONING_TIMEOUT
+                value: 2h
+            script: |
+              #!/usr/bin/env bash
+              set -eo pipefail
+
+              DEPROVISION_SUCCESS=0
+              on_exit() {
+                if [[ "$DEPROVISION_SUCCESS" -eq 0 ]]; then
+                  echo "Dumping TestPlatformCluster claim for debugging:"
+                  oc -n "$NAMESPACE" get testplatformclusters.ci.openshift.org "$CLAIM_NAME" -o yaml || true
+                fi
+              }
+              trap on_exit EXIT
+
+              echo "Deprovisioning cluster: $CLAIM_NAME (namespace: $NAMESPACE)"
+              oc -n "$NAMESPACE" patch testplatformclusters.ci.openshift.org "$CLAIM_NAME" \
+                --type=json \
+                --patch='[{"op":"add","path":"/spec/tearDownCluster","value":true}]'
+
+              echo "Waiting for deprovisioning (timeout: $CLUSTER_DEPROVISIONING_TIMEOUT)..."
+              oc -n "$NAMESPACE" wait testplatformclusters.ci.openshift.org "$CLAIM_NAME" \
+                --for=condition=ProwJobCompleted=true \
+                --timeout="$CLUSTER_DEPROVISIONING_TIMEOUT"
+
+              ec=$(oc -n "$NAMESPACE" get testplatformclusters.ci.openshift.org "$CLAIM_NAME" -o json 2>&1)
+              ok=$(jq -r 'any((.status.conditions // [])[]; .type=="ProwJobCompleted" and .reason=="ProwJobCompleted")' <<< "$ec")
+              if [[ "$ok" == "true" ]]; then
+                DEPROVISION_SUCCESS=1
+                echo "Cluster deprovisioned successfully."
+              else
+                echo "Error: deprovisioning did not complete cleanly."
+                echo "$ec"
+                exit 1
+              fi
       params:
-        - name: testPlatformClusterClaimName
+        - name: claimName
           value: $(tasks.provision-cluster.results.testPlatformClusterClaimName)
-        - name: testPlatformClusterClaimNamespace
+        - name: claimNamespace
           value: $(tasks.provision-cluster.results.testPlatformClusterClaimNamespace)
+        - name: pipelineStatus
+          value: $(tasks.status)
 
 ---
 # =============================================================================
