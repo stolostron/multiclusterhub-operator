@@ -254,10 +254,57 @@ spec:
 
               CATALOG_NAME="acm-art-catalog"
 
-              echo "=== Deploying CatalogSource from FBC fragment ==="
+              echo "=== Detecting OLM version ==="
+              # Mirror MCH's detectOLMVersion logic: v1 if clusterextensions CRD present and
+              # OPERATOR_CONDITION_NAME unset (i.e. not running inside an OLM v0 bundle).
+              if [[ -z "${OPERATOR_CONDITION_NAME:-}" ]] && \
+                 oc get crd clusterextensions.olm.operatorframework.io >/dev/null 2>&1; then
+                OLM_VERSION="v1"
+              else
+                OLM_VERSION="v0"
+              fi
+              echo "OLM version: ${OLM_VERSION}"
               echo "FBC image: ${FBC_FRAGMENT}"
 
-              cat <<EOF | oc apply -f -
+              if [[ "${OLM_VERSION}" == "v1" ]]; then
+                echo "=== Deploying ClusterCatalog from FBC fragment (OLM v1) ==="
+                cat <<EOF | oc apply -f -
+              apiVersion: olm.operatorframework.io/v1
+              kind: ClusterCatalog
+              metadata:
+                name: ${CATALOG_NAME}
+              spec:
+                priority: 100
+                source:
+                  type: Image
+                  image:
+                    ref: ${FBC_FRAGMENT}
+                    pollIntervalMinutes: 10
+              EOF
+
+                echo "Waiting for ClusterCatalog '${CATALOG_NAME}' to be Serving..."
+                timeout=300
+                interval=10
+                elapsed=0
+                while [[ ${elapsed} -lt ${timeout} ]]; do
+                  serving=$(oc get clustercatalog "${CATALOG_NAME}" \
+                    -o jsonpath='{.status.conditions[?(@.type=="Serving")].status}' 2>/dev/null || echo "")
+                  if [[ "${serving}" == "True" ]]; then
+                    echo "ClusterCatalog is Serving"
+                    break
+                  fi
+                  echo "  Serving=${serving:-Unknown} (${elapsed}s/${timeout}s)"
+                  sleep "${interval}"
+                  elapsed=$((elapsed + interval))
+                done
+                if [[ ${elapsed} -ge ${timeout} ]]; then
+                  echo "ERROR: ClusterCatalog did not become Serving within ${timeout}s"
+                  oc get clustercatalog "${CATALOG_NAME}" -o yaml
+                  exit 1
+                fi
+              else
+                echo "=== Deploying CatalogSource from FBC fragment (OLM v0) ==="
+                cat <<EOF | oc apply -f -
               apiVersion: operators.coreos.com/v1alpha1
               kind: CatalogSource
               metadata:
@@ -273,41 +320,43 @@ spec:
                     interval: 10m
               EOF
 
-              echo "Waiting for CatalogSource '${CATALOG_NAME}' to become READY..."
-              timeout=300
-              interval=10
-              elapsed=0
-              while [[ ${elapsed} -lt ${timeout} ]]; do
-                state=$(oc get catalogsource "${CATALOG_NAME}" -n openshift-marketplace \
-                  -o jsonpath='{.status.connectionState.lastObservedState}' 2>/dev/null || echo "")
-                if [[ "${state}" == "READY" ]]; then
-                  echo "CatalogSource is READY"
-                  break
+                echo "Waiting for CatalogSource '${CATALOG_NAME}' to become READY..."
+                timeout=300
+                interval=10
+                elapsed=0
+                while [[ ${elapsed} -lt ${timeout} ]]; do
+                  state=$(oc get catalogsource "${CATALOG_NAME}" -n openshift-marketplace \
+                    -o jsonpath='{.status.connectionState.lastObservedState}' 2>/dev/null || echo "")
+                  if [[ "${state}" == "READY" ]]; then
+                    echo "CatalogSource is READY"
+                    break
+                  fi
+                  echo "  state: ${state:-pending} (${elapsed}s/${timeout}s)"
+                  sleep "${interval}"
+                  elapsed=$((elapsed + interval))
+                done
+                if [[ ${elapsed} -ge ${timeout} ]]; then
+                  echo "ERROR: CatalogSource did not become READY within ${timeout}s"
+                  oc get catalogsource "${CATALOG_NAME}" -n openshift-marketplace -o yaml
+                  exit 1
                 fi
-                echo "  state: ${state:-pending} (${elapsed}s/${timeout}s)"
-                sleep "${interval}"
-                elapsed=$((elapsed + interval))
-              done
-              if [[ ${elapsed} -ge ${timeout} ]]; then
-                echo "ERROR: CatalogSource did not become READY within ${timeout}s"
-                oc get catalogsource "${CATALOG_NAME}" -n openshift-marketplace -o yaml
-                exit 1
-              fi
 
-              echo "Waiting for PackageManifest 'advanced-cluster-management'..."
-              timeout=120
-              elapsed=0
-              while [[ ${elapsed} -lt ${timeout} ]]; do
-                actual_catalog=$(oc get packagemanifest advanced-cluster-management -o jsonpath='{.status.catalogSource}' 2>/dev/null || echo "")
-                if [[ "${actual_catalog}" == "${CATALOG_NAME}" ]]; then
-                  echo "PackageManifest is available"
-                  break
+                echo "Waiting for PackageManifest 'advanced-cluster-management'..."
+                timeout=120
+                elapsed=0
+                while [[ ${elapsed} -lt ${timeout} ]]; do
+                  actual_catalog=$(oc get packagemanifest advanced-cluster-management \
+                    -o jsonpath='{.status.catalogSource}' 2>/dev/null || echo "")
+                  if [[ "${actual_catalog}" == "${CATALOG_NAME}" ]]; then
+                    echo "PackageManifest is available"
+                    break
+                  fi
+                  sleep 10
+                  elapsed=$((elapsed + 10))
+                done
+                if [[ ${elapsed} -ge ${timeout} ]]; then
+                  echo "WARNING: PackageManifest not found after ${timeout}s — proceeding anyway"
                 fi
-                sleep 10
-                elapsed=$((elapsed + 10))
-              done
-              if [[ ${elapsed} -ge ${timeout} ]]; then
-                echo "WARNING: PackageManifest not found after ${timeout}s — proceeding anyway"
               fi
 
               echo "Catalog deployment complete."
@@ -366,10 +415,13 @@ spec:
 
               oc create namespace "${MCH_NAMESPACE}" --dry-run=client -o yaml | oc apply -f -
 
+              _tmp_creds="$(mktemp)"
+              printf '%s' "${STAGE_REGISTRY_CREDS}" > "${_tmp_creds}"
               oc create secret docker-registry "${PULL_SECRET_NAME}" \
                 --namespace "${MCH_NAMESPACE}" \
-                --from-literal=.dockerconfigjson="${STAGE_REGISTRY_CREDS}" \
+                --from-file=.dockerconfigjson="${_tmp_creds}" \
                 --dry-run=client -o yaml | oc apply -f -
+              rm -f "${_tmp_creds}"
 
               cat <<EOF | oc apply -f -
               apiVersion: operators.coreos.com/v1
@@ -635,30 +687,47 @@ spec:
               fi
 
               # Test 5: No unhealthy pods in ACM namespace
+              # Uses containerStatuses to catch CrashLoopBackOff (phase stays Running)
               TESTS=$((TESTS + 1))
-              crashing=$(oc get pods -n "${MCH_NAMESPACE}" \
-                --field-selector=status.phase!=Running,status.phase!=Succeeded \
-                --no-headers 2>/dev/null | wc -l)
-              if [[ ${crashing} -eq 0 ]]; then
-                echo "PASS: All pods in ${MCH_NAMESPACE} are Running/Succeeded"
+              bad_pods=$(oc get pods -n "${MCH_NAMESPACE}" -o json 2>/dev/null | \
+                jq -r '.items[] | select(
+                    .status.phase == "Failed" or
+                    ([.status.containerStatuses[]? |
+                       .state.waiting.reason? // "" |
+                       select(test("^(CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError|InvalidImageName)$"))
+                    ] | length) > 0
+                  ) | .metadata.name' 2>/dev/null || true)
+              bad_count=0
+              if [[ -n "${bad_pods}" ]]; then
+                bad_count=$(printf '%s\n' "${bad_pods}" | wc -l | tr -d ' ')
+              fi
+              if [[ ${bad_count} -eq 0 ]]; then
+                echo "PASS: All pods in ${MCH_NAMESPACE} are healthy"
               else
-                echo "FAIL: ${crashing} pods in ${MCH_NAMESPACE} are not Running/Succeeded"
-                oc get pods -n "${MCH_NAMESPACE}" \
-                  --field-selector=status.phase!=Running,status.phase!=Succeeded
+                echo "FAIL: ${bad_count} unhealthy pod(s) in ${MCH_NAMESPACE}: ${bad_pods}"
+                oc get pods -n "${MCH_NAMESPACE}"
                 FAILURES=$((FAILURES + 1))
               fi
 
               # Test 6: No unhealthy pods in MCE namespace
               TESTS=$((TESTS + 1))
-              crashing=$(oc get pods -n "${MCE_NAMESPACE}" \
-                --field-selector=status.phase!=Running,status.phase!=Succeeded \
-                --no-headers 2>/dev/null | wc -l)
-              if [[ ${crashing} -eq 0 ]]; then
-                echo "PASS: All pods in ${MCE_NAMESPACE} are Running/Succeeded"
+              bad_pods=$(oc get pods -n "${MCE_NAMESPACE}" -o json 2>/dev/null | \
+                jq -r '.items[] | select(
+                    .status.phase == "Failed" or
+                    ([.status.containerStatuses[]? |
+                       .state.waiting.reason? // "" |
+                       select(test("^(CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError|InvalidImageName)$"))
+                    ] | length) > 0
+                  ) | .metadata.name' 2>/dev/null || true)
+              bad_count=0
+              if [[ -n "${bad_pods}" ]]; then
+                bad_count=$(printf '%s\n' "${bad_pods}" | wc -l | tr -d ' ')
+              fi
+              if [[ ${bad_count} -eq 0 ]]; then
+                echo "PASS: All pods in ${MCE_NAMESPACE} are healthy"
               else
-                echo "FAIL: ${crashing} pods in ${MCE_NAMESPACE} are not Running/Succeeded"
-                oc get pods -n "${MCE_NAMESPACE}" \
-                  --field-selector=status.phase!=Running,status.phase!=Succeeded
+                echo "FAIL: ${bad_count} unhealthy pod(s) in ${MCE_NAMESPACE}: ${bad_pods}"
+                oc get pods -n "${MCE_NAMESPACE}"
                 FAILURES=$((FAILURES + 1))
               fi
 
@@ -675,9 +744,40 @@ spec:
               echo -n "{\"result\":\"${RESULT}\",\"timestamp\":\"$(date +%s)\",\"successes\":$((TESTS - FAILURES)),\"failures\":${FAILURES},\"warnings\":0}" \
                 > "$(results.TEST_OUTPUT.path)"
 
-              if [[ ${FAILURES} -gt 0 ]]; then
+    # =========================================================================
+    # Step 8: Fail the pipeline if smoke tests recorded failures
+    # Separated so that smoke-tests always writes TEST_OUTPUT (Tekton drops
+    # results from failed tasks, which would leave HACBS_TEST_OUTPUT empty).
+    # =========================================================================
+    - name: fail-on-smoke-test-failures
+      runAfter:
+        - smoke-tests
+      when:
+        - input: $(tasks.resolve-ocp-version.results.matches)
+          operator: in
+          values: ["true"]
+      taskSpec:
+        params:
+          - name: TEST_OUTPUT
+            type: string
+        steps:
+          - name: check
+            image: quay.io/konflux-ci/konflux-test:latest
+            env:
+              - name: TEST_OUTPUT
+                value: $(params.TEST_OUTPUT)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              failures=$(jq -r '.failures // 0' <<< "${TEST_OUTPUT}")
+              if [[ "${failures}" -gt 0 ]]; then
+                echo "Smoke tests reported ${failures} failure(s) — failing pipeline."
                 exit 1
               fi
+              echo "Smoke tests passed."
+      params:
+        - name: TEST_OUTPUT
+          value: $(tasks.smoke-tests.results.TEST_OUTPUT)
 
   # ===========================================================================
   # Finally: must-gather on failure + deprovision cluster
@@ -743,6 +843,8 @@ spec:
               echo "=== Must-gather complete ==="
 
     - name: deprovision-cluster
+      runAfter:
+        - must-gather
       when:
         - input: $(tasks.resolve-ocp-version.results.matches)
           operator: in
@@ -794,7 +896,7 @@ spec:
       value: "stable-5.0"
   contexts:
     - description: Test ACM+MCE FBC install on OCP 5.0
-      name: acm-mce-fbc-50-ocp50
+      name: application
 
 ---
 # --- ACM 5.1 on OCP 5.0 (example for a new release — same pipeline) ---
@@ -821,4 +923,4 @@ spec:
 #       value: "stable-5.1"
 #   contexts:
 #     - description: Test ACM+MCE FBC install on OCP 5.0
-#       name: acm-mce-fbc-51-ocp50
+#       name: application
