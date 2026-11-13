@@ -19,6 +19,7 @@ components:
           - "INSTALL_NAMESPACE"
           - "LIVE_NETWORK_KEY"
           - "LIVE_NETWORK_VALUE"
+          - "HCO_TEMPLATE_START"
         auto-install-for-all-clusters: true
         # CNV and MTV declare channel/name/namespace but not source,
         # sourceNamespace or startingCSV. Request them so the operator can
