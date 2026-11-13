@@ -7,25 +7,25 @@ updates:
 external-images:
 - name: configmap_reloader
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest"
-  replace: "registry.redhat.io/openshift4/ose-configmap-reloader-rhel9:v4.20.0-202603272224.p2.g2438d7c.assembly.stream.el9"
+  replace: "registry.redhat.io/openshift4/ose-configmap-reloader-rhel9:v4.20.0-202611040818.p2.g2438d7c.assembly.stream.el9"
 - name: ubi_minimal
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/ubi_minimal:latest"
-  replace: "registry.redhat.io/ubi9/ubi-minimal:9.7-1776104705"
+  replace: "registry.redhat.io/ubi9/ubi-minimal:9.9-1794467051"
 - name: origin_cli
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/origin_cli:latest"
-  replace: "registry.redhat.io/openshift4/ose-cli-rhel9:v4.16.0-202610011108.p2.g33afbae.assembly.stream.el9"
+  replace: "registry.redhat.io/openshift4/ose-cli-rhel9:v4.16.0-202610260938.p2.gcb89b60.assembly.stream.el9"
 - name: redis_7_c9s
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/redis_7_c9s:latest"
-  replace: "registry.redhat.io/rhel9/redis-7:9.7-1776341987"
+  replace: "registry.redhat.io/rhel9/redis-7:1-1794513518"
 - name: postgresql_13
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/postgresql_13:latest"
-  replace: "registry.redhat.io/rhel9/postgresql-13:9.7-1778634764"
+  replace: "registry.redhat.io/rhel9/postgresql-13:1-1794521982"
 - name: memcached
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/memcached:latest"
-  replace: "registry.redhat.io/rhel9/memcached:9.7-1776355978"
+  replace: "registry.redhat.io/rhel9/memcached:1.6-1794502909"
 - name: ose_kube_rbac_proxy
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/ose_kube_rbac_proxy:latest"
-  replace: "registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.16.0-202610011108.p2.gc38f473.assembly.stream.el9"
+  replace: "registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9:v4.16.0-202610260938.p2.gc38f473.assembly.stream.el9"
 - name: volsync
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync:latest"
   replace: "registry.redhat.io/rhacm2/volsync-rhel9:v0.15"
