@@ -41,13 +41,13 @@ Edit these at the top of the script or export before running:
 | `MCH_NAME` | `multiclusterhub` | Name of MultiClusterHub CR |
 | `REGISTRY_MIRROR` | `quay.io:443/acm-d` | Downstream registry mirror |
 | `PULL_SECRET_NAME` | `multiclusterhub-operator-pull-secret` | Pull secret name |
-| `ACM_SNAPSHOT` | `latest-5.0` | ACM snapshot version (e.g., `5.0.0-DOWNSTREAM-2026-05-28-11-50-04`) |
-| `MCE_SNAPSHOT` | `latest-5.0` | MCE snapshot version (e.g., `5.0.0-DOWNSTREAM-2026-05-28-11-50-04`) |
+| `ACM_SNAPSHOT` | `latest-5.0` | ACM snapshot version (e.g., `5.0.1-DOWNSTREAM-2026-05-28-11-50-04`) |
+| `MCE_SNAPSHOT` | `latest-5.0` | MCE snapshot version (e.g., `5.0.1-DOWNSTREAM-2026-05-28-11-50-04`) |
 
 **Example:**
 ```bash
-export ACM_SNAPSHOT="5.0.0-DOWNSTREAM-2026-05-28-11-50-04"
-export MCE_SNAPSHOT="5.0.0-DOWNSTREAM-2026-05-28-11-50-04"
+export ACM_SNAPSHOT="5.0.1-DOWNSTREAM-2026-05-28-11-50-04"
+export MCE_SNAPSHOT="5.0.1-DOWNSTREAM-2026-05-28-11-50-04"
 ```
 
 ---
@@ -572,8 +572,8 @@ echo "  kubectl get pods -n multicluster-engine"
 
 ```bash
 # Set snapshot versions (optional, defaults to latest-5.0)
-export ACM_SNAPSHOT="5.0.0-DOWNSTREAM-2026-05-28-11-50-04"
-export MCE_SNAPSHOT="5.0.0-DOWNSTREAM-2026-05-28-11-50-04"
+export ACM_SNAPSHOT="5.0.1-DOWNSTREAM-2026-05-28-11-50-04"
+export MCE_SNAPSHOT="5.0.1-DOWNSTREAM-2026-05-28-11-50-04"
 
 # Run installation
 chmod +x install-downstream-olmv1.sh

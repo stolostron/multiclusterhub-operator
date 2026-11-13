@@ -10,7 +10,7 @@ metadata:
 # transition-to-release
 
 Automates the version/channel bump multiclusterhub-operator needs whenever ACM/MCH
-moves to a new release (e.g. `5.0.0` -> `5.1.0`). This is a **fully agentic** skill —
+moves to a new release (e.g. `5.0.1` -> `5.1.0`). This is a **fully agentic** skill —
 there are no helper scripts. You (the agent loading this skill) do the scanning,
 reasoning, editing, validating, committing, and PR/Jira creation yourself using your
 normal tools (Grep, Read, Edit, Bash, git, GitHub MCP, Jira MCP).
@@ -34,7 +34,7 @@ carefully before editing tests.
 
 ## Phase 1 — Inputs
 
-1. Read `COMPONENT_VERSION` for the current version (e.g. `5.0.0`).
+1. Read `COMPONENT_VERSION` for the current version (e.g. `5.0.1`).
 2. Ask the user for the new MCH version (e.g. `5.1.0`). Validate:
    - Semantic version `X.Y.Z`.
    - Strictly greater than current.

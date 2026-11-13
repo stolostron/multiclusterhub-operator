@@ -129,9 +129,9 @@ func TestEnsureMCEComplianceBanner_Compliant_RemovesBanner(t *testing.T) {
 
 	compliance := &operatorsv1.MCEVersionComplianceStatus{
 		RequiredChannel: "stable-5.0",
-		CurrentVersion:  "5.0.0",
+		CurrentVersion:  "5.0.1",
 		IsCompliant:     true,
-		Message:         "MCE version 5.0.0 meets channel stable-5.0 requirements",
+		Message:         "MCE version 5.0.1 meets channel stable-5.0 requirements",
 	}
 
 	err := recon.ensureMCEComplianceBanner(ctx, hub, compliance)

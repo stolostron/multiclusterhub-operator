@@ -735,7 +735,7 @@ func TestCNVAnnotation(t *testing.T) {
 
 func TestRenderChartOLMv1(t *testing.T) {
 	os.Setenv("DIRECTORY_OVERRIDE", "../templates")
-	os.Setenv("ACM_HUB_OCP_VERSION", "5.0.0")
+	os.Setenv("ACM_HUB_OCP_VERSION", "5.0.1")
 	defer os.Unsetenv("DIRECTORY_OVERRIDE")
 	defer os.Unsetenv("ACM_HUB_OCP_VERSION")
 

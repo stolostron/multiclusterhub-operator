@@ -25,9 +25,9 @@ metadata:
     features.operators.openshift.io/token-auth-azure: 'false'
     features.operators.openshift.io/token-auth-gcp: 'false'
     olm.properties: '[{"type": "olm.maxOpenShiftVersion", "value": "5.1"}]'
-    olm.skipRange: '>=2.17.0-0 <5.0.0'
+    olm.skipRange: '>=2.17.0-0 <5.0.1'
     operators.openshift.io/must-gather-image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/acm-must-gather-rhel9:latest
-  name: advanced-cluster-management.v5.0.0
+  name: advanced-cluster-management.v5.0.1
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -37,7 +37,7 @@ metadata:
     operatorframework.io/os.linux: supported
 spec:
   displayName: Advanced Cluster Management for Kubernetes
-  version: 5.0.0
+  version: 5.0.1
   provider:
     name: Red Hat
   maintainers:
@@ -2012,7 +2012,7 @@ spec:
                 - name: OPERAND_IMAGE_VOLSYNC
                   value: image-registry.openshift-image-registry.svc:5000/open-cluster-management/volsync-rhel9:latest
                 - name: OPERATOR_VERSION
-                  value: 5.0.0
+                  value: 5.0.1
                 - name: OPERATOR_PACKAGE
                   value: advanced-cluster-management
                 image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest

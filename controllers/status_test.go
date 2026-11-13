@@ -426,7 +426,7 @@ func TestCalculateStatus_RemovesStaleProgressingCondition(t *testing.T) {
 			},
 		},
 		Status: mcev1.MultiClusterEngineStatus{
-			CurrentVersion: "5.0.0",
+			CurrentVersion: "5.0.1",
 			Conditions: []mcev1.MultiClusterEngineCondition{
 				{
 					Type:    mcev1.MultiClusterEngineAvailable,
