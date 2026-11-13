@@ -75,11 +75,6 @@ spec:
           value: $(tasks.parse-metadata.results.component-container-image)
         - name: ocp_version
           value: $(params.ocp_version)
-      results:
-        - name: matches
-          description: "'true' if the FBC fragment matches the target OCP version"
-        - name: fbc_fragment
-          description: The FBC fragment image reference (passed through)
       taskSpec:
         params:
           - name: fbc_fragment
@@ -104,6 +99,11 @@ spec:
                 jq -r '.Labels["com.redhat.fbc.openshift.version"] // empty')
 
               echo "FBC OCP Version label: ${fbc_ocp_version}"
+
+              if [ -z "$fbc_ocp_version" ]; then
+                echo "ERROR: FBC fragment image has no 'com.redhat.openshift.versions' label"
+                exit 1
+              fi
 
               # Strip 'v' prefix for comparison if present
               ocp_bare="${OCP_VERSION#v}"
@@ -207,8 +207,7 @@ spec:
               current_secret=$(oc get secret/pull-secret -n openshift-config \
                 -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d)
 
-              merged_secret=$(echo "${current_secret}" | \
-                jq -s '.[0].auths * .[1].auths | {auths: .}' \
+              merged_secret=$(jq -s '.[0].auths * .[1].auths | {auths: .}' \
                   <(echo "${current_secret}") <(echo "${STAGE_REGISTRY_CREDS}"))
 
               oc set data secret/pull-secret -n openshift-config \
@@ -295,7 +294,8 @@ spec:
               timeout=120
               elapsed=0
               while [[ ${elapsed} -lt ${timeout} ]]; do
-                if oc get packagemanifest advanced-cluster-management 2>/dev/null | grep -q "${CATALOG_NAME}"; then
+                actual_catalog=$(oc get packagemanifest advanced-cluster-management -o jsonpath='{.status.catalogSource}' 2>/dev/null || echo "")
+                if [[ "${actual_catalog}" == "${CATALOG_NAME}" ]]; then
                   echo "PackageManifest is available"
                   break
                 fi
@@ -405,8 +405,8 @@ spec:
               interval=15
               elapsed=0
               while [[ ${elapsed} -lt ${timeout} ]]; do
-                csv_name=$(oc get csv -n "${MCH_NAMESPACE}" -o json 2>/dev/null | \
-                  jq -r ".items[] | select(.spec.displayName | test(\"advanced-cluster-management\"; \"i\")) | .metadata.name" 2>/dev/null | head -1 || echo "")
+                csv_name=$(oc get subscription acm-operator-subscription -n "${MCH_NAMESPACE}" \
+                  -o jsonpath='{.status.installedCSV}' 2>/dev/null || echo "")
                 if [[ -n "${csv_name}" ]]; then
                   phase=$(oc get csv "${csv_name}" -n "${MCH_NAMESPACE}" \
                     -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
@@ -560,9 +560,6 @@ spec:
         - input: $(tasks.resolve-ocp-version.results.matches)
           operator: in
           values: ["true"]
-      results:
-        - name: TEST_OUTPUT
-          description: Test results in HACBS format
       taskSpec:
         results:
           - name: TEST_OUTPUT
@@ -671,7 +668,7 @@ spec:
                 RESULT="SUCCESS"
               fi
 
-              echo -n "{\"result\":\"${RESULT}\",\"successes\":$((TESTS - FAILURES)),\"failures\":${FAILURES},\"warnings\":0}" \
+              echo -n "{\"result\":\"${RESULT}\",\"timestamp\":\"$(date +%s)\",\"successes\":$((TESTS - FAILURES)),\"failures\":${FAILURES},\"warnings\":0}" \
                 > "$(results.TEST_OUTPUT.path)"
 
               if [[ ${FAILURES} -gt 0 ]]; then
@@ -769,7 +766,7 @@ spec:
 # Create one ITS per release × OCP version combination.
 # =============================================================================
 
-# --- ACM 5.0 on OCP 4.17 ---
+# --- ACM 5.0 on OCP 5.0 ---
 apiVersion: appstudio.redhat.com/v1beta2
 kind: IntegrationTestScenario
 metadata:
@@ -796,7 +793,7 @@ spec:
       name: acm-mce-fbc-50-ocp50
 
 ---
-# --- ACM 5.1 on OCP 4.17 (example for a new release — same pipeline) ---
+# --- ACM 5.1 on OCP 5.0 (example for a new release — same pipeline) ---
 # apiVersion: appstudio.redhat.com/v1beta2
 # kind: IntegrationTestScenario
 # metadata:
