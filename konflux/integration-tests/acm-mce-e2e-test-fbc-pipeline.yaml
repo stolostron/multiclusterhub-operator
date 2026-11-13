@@ -843,8 +843,6 @@ spec:
               echo "=== Must-gather complete ==="
 
     - name: deprovision-cluster
-      runAfter:
-        - must-gather
       when:
         - input: $(tasks.resolve-ocp-version.results.matches)
           operator: in
