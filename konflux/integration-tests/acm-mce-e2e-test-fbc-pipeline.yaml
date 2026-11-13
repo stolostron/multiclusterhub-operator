@@ -101,7 +101,7 @@ spec:
               echo "FBC OCP Version label: ${fbc_ocp_version}"
 
               if [ -z "$fbc_ocp_version" ]; then
-                echo "ERROR: FBC fragment image has no 'com.redhat.openshift.versions' label"
+                echo "ERROR: FBC fragment image has no 'com.redhat.fbc.openshift.version' label"
                 exit 1
               fi
 
