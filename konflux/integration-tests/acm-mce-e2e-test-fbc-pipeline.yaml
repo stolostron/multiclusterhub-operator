@@ -139,6 +139,10 @@ spec:
           - name: pathInRepo
             value: tasks/provision-ephemeral-cluster/0.1/provision-ephemeral-cluster.yaml
       params:
+        - name: ownerName
+          value: $(context.pipelineRun.name)
+        - name: ownerUid
+          value: $(context.pipelineRun.uid)
         - name: workflow
           value: hypershift-hostedcluster-workflow
         - name: clusterProfile
