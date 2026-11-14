@@ -85,6 +85,13 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if utils.MigrateDeprecatedAnnotations(multiClusterHub) {
 		r.Log.Info("Migrating deprecated annotations to current equivalents")
 		if err := r.Client.Update(ctx, multiClusterHub); err != nil {
+			if errors.IsConflict(err) {
+				// Conflict is expected when multiple controllers or webhooks
+				// update the MCH concurrently. The next reconcile re-fetches
+				// the object and retries the migration automatically.
+				r.Log.Info("Annotation migration update conflicted, will retry on next reconcile")
+				return ctrl.Result{Requeue: true}, nil
+			}
 			r.Log.Error(err, "Failed to update MCH after annotation migration")
 			return ctrl.Result{}, err
 		}
@@ -145,7 +152,18 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			retQueue = statusQueue
 		}
 		if retError == nil {
-			retError = statusError
+			// Only promote the status error to a reconcile error when the main
+			// reconcile body did not already set a RequeueAfter/Requeue result.
+			// Setting both a non-empty result AND a non-nil error causes
+			// controller-runtime to ignore the result and fall back to exponential
+			// backoff, which is undesirable when the reconcile itself succeeded and
+			// the status update failure is transient (e.g. a conflict).
+			if statusError != nil && retQueue != (reconcile.Result{}) {
+				r.Log.Info("Status update failed but reconcile succeeded with requeue; will retry status on next cycle",
+					"statusError", statusError)
+			} else {
+				retError = statusError
+			}
 		}
 	}()
 
