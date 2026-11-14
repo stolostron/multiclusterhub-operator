@@ -14,7 +14,7 @@ spec:
     resource: addontemplates
   - group: addon.open-cluster-management.io
     name: kubevirt-hyperconverged-template-values
-    namespace: '{{ .Values.global.namespace }}'
+    namespace: open-cluster-management
     resource: addondeploymentconfigs
   installStrategy:
     placements:
