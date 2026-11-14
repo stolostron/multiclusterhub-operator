@@ -1026,19 +1026,22 @@ rules:
 - apiGroups:
   - dynamic-scoring.open-cluster-management.io
   resources:
-  - dynamicscorers/finalizers
+  - dynamicscorers/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
   - dynamicscoringconfigs/finalizers
   verbs:
   - update
 - apiGroups:
   - dynamic-scoring.open-cluster-management.io
   resources:
-  - dynamicscorers/status
   - dynamicscoringconfigs/status
   verbs:
   - get
-  - patch
-  - update
 - apiGroups:
   - extensions.hive.openshift.io
   resources:
