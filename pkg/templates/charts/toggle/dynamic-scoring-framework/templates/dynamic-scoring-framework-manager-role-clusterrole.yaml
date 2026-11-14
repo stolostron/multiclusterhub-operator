@@ -10,51 +10,20 @@ rules:
   resources:
   - managedclusters
   verbs:
-  - create
-  - delete
-  - get
   - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - dynamic-scoring.open-cluster-management.io
-  resources:
-  - dynamicscorers
-  - dynamicscoringconfigs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - dynamic-scoring.open-cluster-management.io
-  resources:
-  - dynamicscorers/finalizers
-  - dynamicscoringconfigs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - dynamic-scoring.open-cluster-management.io
-  resources:
-  - dynamicscorers/status
-  - dynamicscoringconfigs/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - work.open-cluster-management.io
   resources:
   - manifestworks
   verbs:
   - create
-  - delete
+- apiGroups:
+  - work.open-cluster-management.io
+  resourceNames:
+  - dynamic-scoring-config-manifestwork
+  resources:
+  - manifestworks
+  verbs:
   - get
-  - list
-  - patch
   - update
-  - watch
+  - delete

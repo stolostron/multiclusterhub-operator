@@ -1,0 +1,146 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnTemplate
+metadata:
+  name: proxy-cclm
+spec:
+  addonName: proxy-cclm
+  agentSpec:
+    deleteOption:
+      propagationPolicy: SelectivelyOrphan
+      selectivelyOrphans:
+        orphaningRules:
+        - group: ''
+          name: virt-synchronization-controller
+          namespace: openshift-cnv
+          resource: services
+        - group: route.openshift.io
+          name: virt-synchronization-endpoint
+          namespace: openshift-cnv
+          resource: routes
+    manifestConfigs:
+    - resourceIdentifier:
+        group: policy.open-cluster-management.io
+        name: proxy-cclm-kubevirt-config
+        namespace: open-cluster-management-policies
+        resource: configurationpolicies
+      updateStrategy:
+        type: CreateOnly
+    - resourceIdentifier:
+        group: ''
+        name: virt-synchronization-controller
+        namespace: openshift-cnv
+        resource: services
+      updateStrategy:
+        type: CreateOnly
+    - resourceIdentifier:
+        group: route.openshift.io
+        name: virt-synchronization-endpoint
+        namespace: openshift-cnv
+        resource: routes
+      updateStrategy:
+        type: CreateOnly
+    workload:
+      manifests:
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: proxy-cclm-policy-manager
+          namespace: open-cluster-management-policies
+        rules:
+        - apiGroups:
+          - policy.open-cluster-management.io
+          resources:
+          - configurationpolicies
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: proxy-cclm-policy-manager-hosted-binding
+          namespace: open-cluster-management-policies
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: proxy-cclm-policy-manager
+        subjects:
+        - kind: ServiceAccount
+          name: klusterlet-{{ `{{CLUSTER_NAME}}` }}-work-sa
+          namespace: open-cluster-management-{{ `{{CLUSTER_NAME}}` }}
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: proxy-cclm-policy-manager-binding
+          namespace: open-cluster-management-policies
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: proxy-cclm-policy-manager
+        subjects:
+        - kind: ServiceAccount
+          name: klusterlet-work-sa
+          namespace: open-cluster-management-agent
+      - apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: proxy-cclm-kubevirt-config
+          namespace: open-cluster-management-policies
+        spec:
+          evaluationInterval:
+            compliant: 1m
+            noncompliant: 30s
+          object-templates:
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: kubevirt.io/v1
+              kind: KubeVirt
+              metadata:
+                name: kubevirt-kubevirt-hyperconverged
+                namespace: openshift-cnv
+              spec:
+                configuration:
+                  developerConfiguration:
+                    featureGates:
+                    - CrossClusterMigrationProxy
+                  migrations:
+                    decentralizedLiveMigrationDatapath: Proxy
+          pruneObjectBehavior: None
+          remediationAction: enforce
+          severity: low
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          labels:
+            kubevirt.io/synchronization-endpoint: 'true'
+          name: virt-synchronization-controller
+          namespace: openshift-cnv
+        spec:
+          ports:
+          - name: grpc
+            port: 9185
+            protocol: TCP
+            targetPort: sync
+          selector:
+            kubevirt.io: virt-synchronization-controller
+          type: ClusterIP
+      - apiVersion: route.openshift.io/v1
+        kind: Route
+        metadata:
+          labels:
+            kubevirt.io/synchronization-endpoint: 'true'
+          name: virt-synchronization-endpoint
+          namespace: openshift-cnv
+        spec:
+          port:
+            targetPort: grpc
+          tls:
+            insecureEdgeTerminationPolicy: None
+            termination: passthrough
+          to:
+            kind: Service
+            name: virt-synchronization-controller
