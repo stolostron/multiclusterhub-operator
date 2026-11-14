@@ -30,6 +30,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// truncateUID safely returns the first maxLen characters of a UID.
+// If the UID is shorter than maxLen the full string is returned, avoiding
+// an out-of-bounds panic on short or empty UIDs.
+func truncateUID(uid types.UID, maxLen int) string {
+	s := string(uid)
+	if len(s) < maxLen {
+		return s
+	}
+	return s[:maxLen]
+}
+
 func (r *MultiClusterHubReconciler) cleanupClusterRoles(ctx context.Context, reqLogger logr.Logger,
 	m *operatorsv1.MultiClusterHub) error {
 	err := r.Client.DeleteAllOf(ctx, &rbacv1.ClusterRole{}, client.MatchingLabels{
@@ -306,7 +317,7 @@ func (r *MultiClusterHubReconciler) cleanupAppSubscriptions(ctx context.Context,
 	// If there are more appsubs with our installer label than helmreleases, update helmreleases
 	if len(appSubList.Items) > len(helmReleaseList.Items) {
 		for _, appsub := range appSubList.Items {
-			helmReleaseName := fmt.Sprintf("%s-%s", strings.Replace(appsub.GetName(), "-sub", "", 1), appsub.GetUID()[0:5])
+			helmReleaseName := fmt.Sprintf("%s-%s", strings.Replace(appsub.GetName(), "-sub", "", 1), truncateUID(appsub.GetUID(), 5))
 
 			helmRelease := &unstructured.Unstructured{}
 			helmRelease.SetGroupVersionKind(schema.GroupVersionKind{

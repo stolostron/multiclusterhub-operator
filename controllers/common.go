@@ -441,7 +441,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecret(m *operatorv1.MultiClusterH
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pullSecret.Name,
 			Namespace: newNS,
-			Labels:    pullSecret.Labels,
+			Labels:    map[string]string{}, // Do not inherit source labels; installer label added below.
 		},
 		Data: pullSecret.Data,
 		Type: corev1.SecretTypeDockerConfigJson,
@@ -481,7 +481,7 @@ func (r *MultiClusterHubReconciler) ensurePullSecretCreated(m *operatorv1.MultiC
 	return ctrl.Result{}, nil
 }
 
-func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operatorv1.MultiClusterHub) error {
+func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(ctx context.Context, mch *operatorv1.MultiClusterHub) error {
 	// Define configmap
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -520,6 +520,26 @@ func (r *MultiClusterHubReconciler) maintainImageManifestConfigmap(mch *operator
 		err = r.Client.Update(context.TODO(), configmap)
 		if err != nil {
 			return err
+		}
+	}
+
+	// Clean up stale image-manifest ConfigMaps left behind by previous versions.
+	// Each upgrade creates a new versioned ConfigMap (e.g. mch-image-manifest-2.11.0)
+	// but never removed old ones, causing namespace pollution over successive upgrades.
+	cmList := &corev1.ConfigMapList{}
+	if err := r.Client.List(ctx, cmList,
+		client.InNamespace(mch.Namespace),
+		client.MatchingLabels{"ocm-configmap-type": "image-manifest"},
+	); err != nil {
+		return err
+	}
+	currentName := fmt.Sprintf("mch-image-manifest-%s", r.CacheSpec.ManifestVersion)
+	for i := range cmList.Items {
+		if cmList.Items[i].Name != currentName {
+			r.Log.Info("Deleting stale image-manifest ConfigMap", "name", cmList.Items[i].Name)
+			if err := r.Client.Delete(ctx, &cmList.Items[i]); err != nil && !errors.IsNotFound(err) {
+				return err
+			}
 		}
 	}
 
