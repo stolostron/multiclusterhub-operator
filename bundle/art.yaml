@@ -3,7 +3,7 @@ updates:
 - file: "manifests/advanced-cluster-management.clusterserviceversion.yaml"
   update_list:
   - search: "2.11.0"
-    replace: "2.11.14"
+    replace: "2.11.15"
 external-images:
 - name: configmap_reloader
   search: "image-registry.openshift-image-registry.svc:5000/open-cluster-management/configmap_reloader:latest"
