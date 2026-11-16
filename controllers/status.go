@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -162,6 +163,48 @@ func (r *MultiClusterHubReconciler) publishMCHComponentMetrics(m *operatorsv1.Mu
 	}
 }
 
+// publishMCHPhaseTransitionTimestamp updates the acm_mch_phase_transition_timestamp
+// metric for the hub and logs when it is first published (after an operator restart).
+func (r *MultiClusterHubReconciler) publishMCHPhaseTransitionTimestamp(m *operatorsv1.MultiClusterHub, conditions []operatorsv1.HubCondition, phase operatorsv1.HubPhaseType) {
+	if m.GetDeletionTimestamp() != nil {
+		return
+	}
+	if mchmetrics.SetMCHPhaseTransitionTimestamp(m.Namespace, m.Name, conditions, phase) {
+		r.Log.Info("Published MultiClusterHub phase transition timestamp metric",
+			"metric", mchmetrics.PhaseTransitionTimestampMetricName, "namespace", m.Namespace, "name", m.Name)
+	}
+}
+
+// publishMCHLastReconcileTimestamp updates the acm_mch_last_reconcile_timestamp
+// metric for the hub with time.Now() and logs when it is first published.
+func (r *MultiClusterHubReconciler) publishMCHLastReconcileTimestamp(m *operatorsv1.MultiClusterHub) {
+	if m.GetDeletionTimestamp() != nil {
+		return
+	}
+	ts := float64(time.Now().Unix())
+	if mchmetrics.SetMCHLastReconcileTimestamp(m.Namespace, m.Name, ts) {
+		r.Log.Info("Published MultiClusterHub last reconcile timestamp metric",
+			"metric", mchmetrics.LastReconcileTimestampMetricName, "namespace", m.Namespace, "name", m.Name)
+	}
+}
+
+// publishMCHVersionMetrics updates the version-info, upgrade-available, and
+// MCE-version-compliant gauges for the hub and logs when any published series change.
+func (r *MultiClusterHubReconciler) publishMCHVersionMetrics(m *operatorsv1.MultiClusterHub, status operatorsv1.MultiClusterHubStatus) {
+	if m.GetDeletionTimestamp() != nil {
+		return
+	}
+	if mchmetrics.SetMCHVersionInfo(m.Namespace, m.Name, status.CurrentVersion, status.DesiredVersion) {
+		r.Log.Info("Published MultiClusterHub version info metric",
+			"metric", mchmetrics.VersionInfoMetricName, "namespace", m.Namespace, "name", m.Name,
+			"currentVersion", status.CurrentVersion, "desiredVersion", status.DesiredVersion)
+	}
+	if mchmetrics.SetMCHMCEVersionCompliant(m.Namespace, m.Name, status.MCEVersionCompliance) {
+		r.Log.Info("Published MultiClusterHub MCE version compliant metric",
+			"metric", mchmetrics.MCEVersionCompliantMetricName, "namespace", m.Namespace, "name", m.Name)
+	}
+}
+
 // deleteMCHMetrics removes the metric series for a hub and logs the cleanup when
 // there was something to remove. Logging only on an actual removal keeps a slow
 // teardown, which reconciles repeatedly while finalizers run, from repeating the
@@ -200,6 +243,9 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 		// there is nothing to update.
 		r.publishMCHPhase(m, newStatus.Phase)
 		r.publishMCHComponentMetrics(m, newStatus.Components)
+		r.publishMCHPhaseTransitionTimestamp(m, newStatus.HubConditions, newStatus.Phase)
+		r.publishMCHLastReconcileTimestamp(m)
+		r.publishMCHVersionMetrics(m, newStatus)
 		r.Log.Info("Status hasn't changed")
 		return reconcile.Result{}, nil
 	}
@@ -231,6 +277,9 @@ func (r *MultiClusterHubReconciler) syncHubStatus(ctx context.Context, m *operat
 	// metric never reports a phase that the MultiClusterHub status does not hold.
 	r.publishMCHPhase(m, newStatus.Phase)
 	r.publishMCHComponentMetrics(m, newStatus.Components)
+	r.publishMCHPhaseTransitionTimestamp(m, newStatus.HubConditions, newStatus.Phase)
+	r.publishMCHLastReconcileTimestamp(m)
+	r.publishMCHVersionMetrics(m, newStatus)
 
 	if m.Status.Phase != operatorsv1.HubRunning {
 		return reconcile.Result{RequeueAfter: resyncPeriod}, nil

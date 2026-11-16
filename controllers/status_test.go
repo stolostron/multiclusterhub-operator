@@ -2128,6 +2128,33 @@ func mchPhaseValue(t *testing.T, namespace, name, phase string) float64 {
 	return 0
 }
 
+// mchGaugeValue gathers a gauge (with namespace/name labels only) from the
+// controller-runtime registry and returns its value. Returns (0, false) when no
+// matching series exists.
+func mchGaugeValue(t *testing.T, metricName, namespace, name string) (float64, bool) {
+	t.Helper()
+
+	families, err := ctrlmetrics.Registry.Gather()
+	if err != nil {
+		t.Fatalf("gather metrics: %v", err)
+	}
+	for _, family := range families {
+		if family.GetName() != metricName {
+			continue
+		}
+		for _, metric := range family.GetMetric() {
+			labels := map[string]string{}
+			for _, label := range metric.GetLabel() {
+				labels[label.GetName()] = label.GetValue()
+			}
+			if labels["namespace"] == namespace && labels["name"] == name {
+				return metric.GetGauge().GetValue(), true
+			}
+		}
+	}
+	return 0, false
+}
+
 // TestReconcile_PublishesPersistedPhaseBeforeFailing is a regression test for the
 // restart gap: the metric is process-local, so after a restart the gauge is empty
 // until a reconcile reaches syncHubStatus. Reconcile returns early when any of
@@ -2167,5 +2194,826 @@ func TestReconcile_PublishesPersistedPhaseBeforeFailing(t *testing.T) {
 
 	if got := mchPhaseValue(t, namespace, name, string(operatorsv1.HubRunning)); got != 1 {
 		t.Errorf("expected persisted phase Running to be published as 1 before the failure, got %v", got)
+	}
+}
+
+// TestSetMCHPhaseTransitionTimestamp verifies that the phase-transition timestamp
+// gauge is published and cleaned up correctly.
+func TestSetMCHPhaseTransitionTimestamp(t *testing.T) {
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-phase-ts"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	conditions := []operatorsv1.HubCondition{
+		{
+			Type:               operatorsv1.Complete,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: metav1.NewTime(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)),
+		},
+	}
+
+	changed := mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, conditions, operatorsv1.HubRunning)
+	if !changed {
+		t.Error("expected first publish to report changed=true")
+	}
+
+	val, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected phase transition timestamp metric to be published")
+	}
+	wantTS := float64(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC).Unix())
+	if val != wantTS {
+		t.Errorf("expected timestamp %v, got %v", wantTS, val)
+	}
+
+	// Second call should report changed=false (already published)
+	changed = mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, conditions, operatorsv1.HubRunning)
+	if changed {
+		t.Error("expected second publish to report changed=false")
+	}
+
+	// Verify cleanup removes the metric
+	mchmetrics.DeleteMCHMetrics(namespace, name)
+	_, found = mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if found {
+		t.Error("expected phase transition timestamp metric to be removed after DeleteMCHMetrics")
+	}
+}
+
+// TestSetMCHPhaseTransitionTimestamp_SkipsUnmatchedPhaseOnFirstObservation verifies
+// that on first observation of a hub whose phase has no matching condition (e.g.
+// HubPaused, HubPending, HubWaitingForMCE), the gauge is NOT published rather than
+// reporting a misleading time.Now() timestamp that would be wrong after an operator
+// restart.
+func TestSetMCHPhaseTransitionTimestamp_SkipsUnmatchedPhaseOnFirstObservation(t *testing.T) {
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-phase-ts-skip"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	changed := mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, nil, operatorsv1.HubPending)
+	if changed {
+		t.Error("expected first publish of unmatched phase with no prior record to return false")
+	}
+
+	_, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if found {
+		t.Error("expected no metric to be published for unmatched phase on first observation")
+	}
+
+	// Now publish a matched phase (HubRunning with Complete condition) to seed a record.
+	conditions := []operatorsv1.HubCondition{
+		{
+			Type:               operatorsv1.Complete,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: metav1.NewTime(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)),
+		},
+	}
+	changed = mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, conditions, operatorsv1.HubRunning)
+	if !changed {
+		t.Error("expected matched phase to report changed=true")
+	}
+
+	val, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected metric to be published after matched phase")
+	}
+	wantTS := float64(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC).Unix())
+	if val != wantTS {
+		t.Errorf("expected timestamp %v, got %v", wantTS, val)
+	}
+
+	// Now transition to an unmatched phase (HubPaused) — since there IS a
+	// previous record, it should fall back to time.Now() and publish.
+	before := float64(time.Now().Unix())
+	changed = mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, nil, operatorsv1.HubPaused)
+	after := float64(time.Now().Unix())
+	if !changed {
+		t.Error("expected transition to unmatched phase with prior record to report changed=true")
+	}
+
+	val, found = mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected metric to still be published after transition to unmatched phase")
+	}
+	if val < before || val > after {
+		t.Errorf("expected timestamp between %v and %v, got %v", before, after, val)
+	}
+}
+
+// TestSetMCHPhaseTransitionTimestamp_PreservesTimestampForUnmatchedPhase verifies
+// that repeated reconciles of a hub in a phase with no matching condition (e.g.
+// HubPaused) preserve the original fallback timestamp instead of overwriting it
+// with time.Now() on every call. The test first seeds with a matched phase
+// (HubRunning) so a record exists, then transitions to HubPaused.
+func TestSetMCHPhaseTransitionTimestamp_PreservesTimestampForUnmatchedPhase(t *testing.T) {
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-phase-ts-preserve"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	// Seed with a matched phase (HubRunning with Complete condition) so a record
+	// exists. Without a prior record, an unmatched first observation skips publishing.
+	conditions := []operatorsv1.HubCondition{
+		{
+			Type:               operatorsv1.Complete,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: metav1.NewTime(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)),
+		},
+	}
+	mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, conditions, operatorsv1.HubRunning)
+
+	// Transition to HubPaused (no matching condition) — falls back to time.Now().
+	before := float64(time.Now().Unix())
+	changed := mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, nil, operatorsv1.HubPaused)
+	after := float64(time.Now().Unix())
+	if !changed {
+		t.Error("expected transition to unmatched phase to report changed=true")
+	}
+
+	firstVal, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected phase transition timestamp metric to be published")
+	}
+	if firstVal < before || firstVal > after {
+		t.Errorf("expected first timestamp between %v and %v, got %v", before, after, firstVal)
+	}
+
+	// Second call — same phase, still no matching condition. The gauge must
+	// preserve the original timestamp, not overwrite it with a new time.Now().
+	time.Sleep(1100 * time.Millisecond)
+	changed = mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, nil, operatorsv1.HubPaused)
+	if changed {
+		t.Error("expected second publish with same phase to report changed=false")
+	}
+
+	secondVal, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected phase transition timestamp metric to still be published")
+	}
+	if secondVal != firstVal {
+		t.Errorf("expected repeated reconcile to preserve original timestamp %v, got %v (overwritten with time.Now())", firstVal, secondVal)
+	}
+
+	// Third call — phase changes to HubWaitingForMCE (still unmatched). This IS
+	// a genuine transition, so a new time.Now() fallback is expected.
+	beforeTransition := float64(time.Now().Unix())
+	changed = mchmetrics.SetMCHPhaseTransitionTimestamp(namespace, name, nil, operatorsv1.HubWaitingForMCE)
+	afterTransition := float64(time.Now().Unix())
+	if !changed {
+		t.Error("expected phase change to report changed=true")
+	}
+
+	thirdVal, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected phase transition timestamp metric to still be published after phase change")
+	}
+	if thirdVal < beforeTransition || thirdVal > afterTransition {
+		t.Errorf("expected new timestamp between %v and %v after phase change, got %v", beforeTransition, afterTransition, thirdVal)
+	}
+}
+
+// TestSetMCHLastReconcileTimestamp verifies that the last-reconcile timestamp
+// gauge is published and cleaned up correctly.
+func TestSetMCHLastReconcileTimestamp(t *testing.T) {
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-reconcile-ts"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	ts := float64(time.Now().Unix())
+	changed := mchmetrics.SetMCHLastReconcileTimestamp(namespace, name, ts)
+	if !changed {
+		t.Error("expected first publish to report changed=true")
+	}
+
+	val, found := mchGaugeValue(t, mchmetrics.LastReconcileTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected last reconcile timestamp metric to be published")
+	}
+	if val != ts {
+		t.Errorf("expected timestamp %v, got %v", ts, val)
+	}
+
+	// Second call should report changed=false
+	changed = mchmetrics.SetMCHLastReconcileTimestamp(namespace, name, ts+1)
+	if changed {
+		t.Error("expected second publish to report changed=false")
+	}
+
+	// Gauge should reflect the updated value even though changed=false
+	val, found = mchGaugeValue(t, mchmetrics.LastReconcileTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected last reconcile timestamp metric to still be published after second call")
+	}
+	if val != ts+1 {
+		t.Errorf("expected timestamp %v after second call, got %v", ts+1, val)
+	}
+
+	// Verify cleanup
+	mchmetrics.DeleteMCHMetrics(namespace, name)
+	_, found = mchGaugeValue(t, mchmetrics.LastReconcileTimestampMetricName, namespace, name)
+	if found {
+		t.Error("expected last reconcile timestamp metric to be removed after DeleteMCHMetrics")
+	}
+}
+
+// mchGaugeValueWithLabels gathers a gauge from the controller-runtime registry
+// and returns the value for a metric that matches ALL provided labels.
+// Returns (0, false) when no matching series exists.
+func mchGaugeValueWithLabels(t *testing.T, metricName string, wantLabels map[string]string) (float64, bool) {
+	t.Helper()
+
+	families, err := ctrlmetrics.Registry.Gather()
+	if err != nil {
+		t.Fatalf("gather metrics: %v", err)
+	}
+	for _, family := range families {
+		if family.GetName() != metricName {
+			continue
+		}
+		for _, metric := range family.GetMetric() {
+			labels := map[string]string{}
+			for _, label := range metric.GetLabel() {
+				labels[label.GetName()] = label.GetValue()
+			}
+			match := true
+			for k, v := range wantLabels {
+				if labels[k] != v {
+					match = false
+					break
+				}
+			}
+			if match {
+				return metric.GetGauge().GetValue(), true
+			}
+		}
+	}
+	return 0, false
+}
+
+// TestSetMCHVersionInfo verifies that the version-info and upgrade-available
+// gauges are published and cleaned up correctly.
+func TestSetMCHVersionInfo(t *testing.T) {
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-version-info"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	// Publish with both versions set and matching (no upgrade available)
+	changed := mchmetrics.SetMCHVersionInfo(namespace, name, "2.14.0", "2.14.0")
+	if !changed {
+		t.Error("expected first publish to report changed=true")
+	}
+
+	val, found := mchGaugeValueWithLabels(t, mchmetrics.VersionInfoMetricName, map[string]string{
+		"namespace":       namespace,
+		"name":            name,
+		"current_version": "2.14.0",
+		"desired_version": "2.14.0",
+	})
+	if !found {
+		t.Fatal("expected version info metric to be published")
+	}
+	if val != 1 {
+		t.Errorf("expected version info gauge value 1, got %v", val)
+	}
+
+	// Upgrade not available
+	upgradeVal, found := mchGaugeValue(t, mchmetrics.UpgradeAvailableMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected upgrade available metric to be published")
+	}
+	if upgradeVal != 0 {
+		t.Errorf("expected upgrade available 0 when versions match, got %v", upgradeVal)
+	}
+
+	// Change to different versions (upgrade available)
+	mchmetrics.SetMCHVersionInfo(namespace, name, "2.14.0", "2.15.0")
+
+	// Old version-info series should be gone, new one should exist
+	_, found = mchGaugeValueWithLabels(t, mchmetrics.VersionInfoMetricName, map[string]string{
+		"namespace":       namespace,
+		"name":            name,
+		"current_version": "2.14.0",
+		"desired_version": "2.14.0",
+	})
+	if found {
+		t.Error("expected old version-info series to be cleaned up after version change")
+	}
+
+	val, found = mchGaugeValueWithLabels(t, mchmetrics.VersionInfoMetricName, map[string]string{
+		"namespace":       namespace,
+		"name":            name,
+		"current_version": "2.14.0",
+		"desired_version": "2.15.0",
+	})
+	if !found {
+		t.Fatal("expected new version info metric to be published")
+	}
+	if val != 1 {
+		t.Errorf("expected version info gauge value 1, got %v", val)
+	}
+
+	upgradeVal, _ = mchGaugeValue(t, mchmetrics.UpgradeAvailableMetricName, namespace, name)
+	if upgradeVal != 1 {
+		t.Errorf("expected upgrade available 1 when versions differ, got %v", upgradeVal)
+	}
+
+	// Both empty versions
+	mchmetrics.SetMCHVersionInfo(namespace, name, "", "")
+	upgradeVal, _ = mchGaugeValue(t, mchmetrics.UpgradeAvailableMetricName, namespace, name)
+	if upgradeVal != 0 {
+		t.Errorf("expected upgrade available 0 when both versions empty, got %v", upgradeVal)
+	}
+
+	// Verify cleanup
+	mchmetrics.DeleteMCHMetrics(namespace, name)
+	_, found = mchGaugeValue(t, mchmetrics.UpgradeAvailableMetricName, namespace, name)
+	if found {
+		t.Error("expected upgrade available metric to be removed after DeleteMCHMetrics")
+	}
+}
+
+// TestSetMCHMCEVersionCompliant verifies that the MCE version compliant gauge
+// is published and cleaned up correctly.
+func TestSetMCHMCEVersionCompliant(t *testing.T) {
+	const (
+		namespace = "open-cluster-management"
+		name      = "test-mch-mce-compliant"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	// Publish with compliant MCE
+	compliance := &operatorsv1.MCEVersionComplianceStatus{
+		RequiredChannel: "stable-2.8",
+		CurrentVersion:  "2.8.1",
+		IsCompliant:     true,
+	}
+	changed := mchmetrics.SetMCHMCEVersionCompliant(namespace, name, compliance)
+	if !changed {
+		t.Error("expected first publish to report changed=true")
+	}
+
+	val, found := mchGaugeValueWithLabels(t, mchmetrics.MCEVersionCompliantMetricName, map[string]string{
+		"namespace":           namespace,
+		"name":                name,
+		"required_channel":    "stable-2.8",
+		"current_mce_version": "2.8.1",
+	})
+	if !found {
+		t.Fatal("expected MCE version compliant metric to be published")
+	}
+	if val != 1 {
+		t.Errorf("expected MCE compliant gauge value 1, got %v", val)
+	}
+
+	// Publish with non-compliant MCE (different version label)
+	compliance2 := &operatorsv1.MCEVersionComplianceStatus{
+		RequiredChannel: "stable-2.9",
+		CurrentVersion:  "2.8.1",
+		IsCompliant:     false,
+	}
+	mchmetrics.SetMCHMCEVersionCompliant(namespace, name, compliance2)
+
+	// Old series should be cleaned up
+	_, found = mchGaugeValueWithLabels(t, mchmetrics.MCEVersionCompliantMetricName, map[string]string{
+		"namespace":           namespace,
+		"name":                name,
+		"required_channel":    "stable-2.8",
+		"current_mce_version": "2.8.1",
+	})
+	if found {
+		t.Error("expected old MCE compliant series to be cleaned up after label change")
+	}
+
+	val, found = mchGaugeValueWithLabels(t, mchmetrics.MCEVersionCompliantMetricName, map[string]string{
+		"namespace":           namespace,
+		"name":                name,
+		"required_channel":    "stable-2.9",
+		"current_mce_version": "2.8.1",
+	})
+	if !found {
+		t.Fatal("expected new MCE version compliant metric to be published")
+	}
+	if val != 0 {
+		t.Errorf("expected MCE compliant gauge value 0 when non-compliant, got %v", val)
+	}
+
+	// Publish with nil compliance
+	mchmetrics.SetMCHMCEVersionCompliant(namespace, name, nil)
+	val, found = mchGaugeValueWithLabels(t, mchmetrics.MCEVersionCompliantMetricName, map[string]string{
+		"namespace":           namespace,
+		"name":                name,
+		"required_channel":    "",
+		"current_mce_version": "",
+	})
+	if !found {
+		t.Fatal("expected MCE version compliant metric to be published with empty labels for nil compliance")
+	}
+	if val != 0 {
+		t.Errorf("expected MCE compliant gauge value 0 when compliance is nil, got %v", val)
+	}
+
+	// Verify cleanup
+	mchmetrics.DeleteMCHMetrics(namespace, name)
+	_, found = mchGaugeValueWithLabels(t, mchmetrics.MCEVersionCompliantMetricName, map[string]string{
+		"namespace": namespace,
+		"name":      name,
+	})
+	if found {
+		t.Error("expected MCE version compliant metric to be removed after DeleteMCHMetrics")
+	}
+}
+
+// --- publish* wrapper tests ---
+//
+// These test the publish* methods on MultiClusterHubReconciler, which wrap the
+// metrics Set* functions with deletion-timestamp guards and logging.
+
+// TestPublishMCHPhase_SkipsDeletion verifies that publishMCHPhase does NOT
+// publish any metric when the hub has a deletion timestamp.
+func TestPublishMCHPhase_SkipsDeletion(t *testing.T) {
+	const (
+		namespace = "test-publish-phase-del"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              name,
+			Namespace:         namespace,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+	}
+
+	r.publishMCHPhase(hub, operatorsv1.HubRunning)
+
+	if got := mchPhaseValue(t, namespace, name, string(operatorsv1.HubRunning)); got != 0 {
+		t.Errorf("expected phase metric to be skipped when deletion timestamp is set, got %v", got)
+	}
+}
+
+// TestPublishMCHPhase_PublishesNormally verifies that publishMCHPhase publishes
+// the metric when the hub is NOT being deleted.
+func TestPublishMCHPhase_PublishesNormally(t *testing.T) {
+	const (
+		namespace = "test-publish-phase-normal"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	r.publishMCHPhase(hub, operatorsv1.HubRunning)
+
+	if got := mchPhaseValue(t, namespace, name, string(operatorsv1.HubRunning)); got != 1 {
+		t.Errorf("expected phase Running = 1, got %v", got)
+	}
+}
+
+// TestPublishMCHComponentMetrics_SkipsDeletion verifies that
+// publishMCHComponentMetrics does NOT publish any metric when the hub has a
+// deletion timestamp.
+func TestPublishMCHComponentMetrics_SkipsDeletion(t *testing.T) {
+	const (
+		namespace = "test-publish-comp-del"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              name,
+			Namespace:         namespace,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+	}
+
+	components := map[string]operatorsv1.StatusCondition{
+		"test-component": {
+			Name:      "test-component",
+			Kind:      "Deployment",
+			Type:      "Available",
+			Status:    metav1.ConditionTrue,
+			Available: true,
+		},
+	}
+	r.publishMCHComponentMetrics(hub, components)
+
+	_, found := mchGaugeValueWithLabels(t, mchmetrics.ComponentConditionMetricName, map[string]string{
+		"namespace": namespace,
+		"name":      name,
+		"component": "test-component",
+	})
+	if found {
+		t.Error("expected component condition metric to be skipped when deletion timestamp is set")
+	}
+}
+
+// TestPublishMCHPhaseTransitionTimestamp_Normal verifies the metric is published
+// when the hub is not being deleted and has a matching condition.
+func TestPublishMCHPhaseTransitionTimestamp_Normal(t *testing.T) {
+	const (
+		namespace = "test-publish-pts-normal"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	conditions := []operatorsv1.HubCondition{
+		{
+			Type:               operatorsv1.Complete,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: metav1.NewTime(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)),
+		},
+	}
+
+	r.publishMCHPhaseTransitionTimestamp(hub, conditions, operatorsv1.HubRunning)
+
+	val, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected phase transition timestamp metric to be published")
+	}
+	wantTS := float64(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC).Unix())
+	if val != wantTS {
+		t.Errorf("expected timestamp %v, got %v", wantTS, val)
+	}
+}
+
+// TestPublishMCHPhaseTransitionTimestamp_SkipsDeletion verifies the metric is
+// NOT published when the hub has a deletion timestamp.
+func TestPublishMCHPhaseTransitionTimestamp_SkipsDeletion(t *testing.T) {
+	const (
+		namespace = "test-publish-pts-del"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              name,
+			Namespace:         namespace,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+	}
+
+	conditions := []operatorsv1.HubCondition{
+		{
+			Type:               operatorsv1.Complete,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: metav1.NewTime(time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)),
+		},
+	}
+
+	r.publishMCHPhaseTransitionTimestamp(hub, conditions, operatorsv1.HubRunning)
+
+	_, found := mchGaugeValue(t, mchmetrics.PhaseTransitionTimestampMetricName, namespace, name)
+	if found {
+		t.Error("expected phase transition timestamp metric to be skipped when deletion timestamp is set")
+	}
+}
+
+// TestPublishMCHLastReconcileTimestamp_Normal verifies the metric is published
+// when the hub is not being deleted.
+func TestPublishMCHLastReconcileTimestamp_Normal(t *testing.T) {
+	const (
+		namespace = "test-publish-lrt-normal"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	before := float64(time.Now().Unix())
+	r.publishMCHLastReconcileTimestamp(hub)
+	after := float64(time.Now().Unix())
+
+	val, found := mchGaugeValue(t, mchmetrics.LastReconcileTimestampMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected last reconcile timestamp metric to be published")
+	}
+	if val < before || val > after {
+		t.Errorf("expected timestamp between %v and %v, got %v", before, after, val)
+	}
+}
+
+// TestPublishMCHLastReconcileTimestamp_SkipsDeletion verifies the metric is NOT
+// published when the hub has a deletion timestamp.
+func TestPublishMCHLastReconcileTimestamp_SkipsDeletion(t *testing.T) {
+	const (
+		namespace = "test-publish-lrt-del"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              name,
+			Namespace:         namespace,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+	}
+
+	r.publishMCHLastReconcileTimestamp(hub)
+
+	_, found := mchGaugeValue(t, mchmetrics.LastReconcileTimestampMetricName, namespace, name)
+	if found {
+		t.Error("expected last reconcile timestamp metric to be skipped when deletion timestamp is set")
+	}
+}
+
+// TestPublishMCHVersionMetrics_Normal verifies that version-info,
+// upgrade-available, and MCE-compliant gauges are all published when the hub is
+// not being deleted.
+func TestPublishMCHVersionMetrics_Normal(t *testing.T) {
+	const (
+		namespace = "test-publish-ver-normal"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	status := operatorsv1.MultiClusterHubStatus{
+		CurrentVersion: "2.14.0",
+		DesiredVersion: "2.15.0",
+		MCEVersionCompliance: &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: "stable-2.8",
+			CurrentVersion:  "2.8.1",
+			IsCompliant:     true,
+		},
+	}
+
+	r.publishMCHVersionMetrics(hub, status)
+
+	// Check version-info gauge
+	val, found := mchGaugeValueWithLabels(t, mchmetrics.VersionInfoMetricName, map[string]string{
+		"namespace":       namespace,
+		"name":            name,
+		"current_version": "2.14.0",
+		"desired_version": "2.15.0",
+	})
+	if !found {
+		t.Fatal("expected version info metric to be published")
+	}
+	if val != 1 {
+		t.Errorf("expected version info gauge = 1, got %v", val)
+	}
+
+	// Check upgrade-available gauge
+	upgradeVal, found := mchGaugeValue(t, mchmetrics.UpgradeAvailableMetricName, namespace, name)
+	if !found {
+		t.Fatal("expected upgrade available metric to be published")
+	}
+	if upgradeVal != 1 {
+		t.Errorf("expected upgrade available = 1 when versions differ, got %v", upgradeVal)
+	}
+
+	// Check MCE-compliant gauge
+	mceVal, found := mchGaugeValueWithLabels(t, mchmetrics.MCEVersionCompliantMetricName, map[string]string{
+		"namespace":           namespace,
+		"name":                name,
+		"required_channel":    "stable-2.8",
+		"current_mce_version": "2.8.1",
+	})
+	if !found {
+		t.Fatal("expected MCE version compliant metric to be published")
+	}
+	if mceVal != 1 {
+		t.Errorf("expected MCE compliant gauge = 1, got %v", mceVal)
+	}
+}
+
+// TestPublishMCHVersionMetrics_SkipsDeletion verifies that none of the version
+// gauges are published when the hub has a deletion timestamp.
+func TestPublishMCHVersionMetrics_SkipsDeletion(t *testing.T) {
+	const (
+		namespace = "test-publish-ver-del"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+	now := metav1.Now()
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              name,
+			Namespace:         namespace,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test.io/keep-alive"},
+		},
+	}
+
+	status := operatorsv1.MultiClusterHubStatus{
+		CurrentVersion: "2.14.0",
+		DesiredVersion: "2.15.0",
+		MCEVersionCompliance: &operatorsv1.MCEVersionComplianceStatus{
+			RequiredChannel: "stable-2.8",
+			CurrentVersion:  "2.8.1",
+			IsCompliant:     true,
+		},
+	}
+
+	r.publishMCHVersionMetrics(hub, status)
+
+	_, found := mchGaugeValueWithLabels(t, mchmetrics.VersionInfoMetricName, map[string]string{
+		"namespace": namespace,
+		"name":      name,
+	})
+	if found {
+		t.Error("expected version info metric to be skipped when deletion timestamp is set")
+	}
+
+	_, found = mchGaugeValue(t, mchmetrics.UpgradeAvailableMetricName, namespace, name)
+	if found {
+		t.Error("expected upgrade available metric to be skipped when deletion timestamp is set")
+	}
+
+	_, found = mchGaugeValueWithLabels(t, mchmetrics.MCEVersionCompliantMetricName, map[string]string{
+		"namespace": namespace,
+		"name":      name,
+	})
+	if found {
+		t.Error("expected MCE version compliant metric to be skipped when deletion timestamp is set")
+	}
+}
+
+// TestDeleteMCHMetrics_LogsOnRemoval verifies that deleteMCHMetrics removes
+// metrics that were previously published.
+func TestDeleteMCHMetrics_LogsOnRemoval(t *testing.T) {
+	const (
+		namespace = "test-delete-metrics"
+		name      = "test-hub"
+	)
+	t.Cleanup(func() { mchmetrics.DeleteMCHMetrics(namespace, name) })
+
+	r := newTestReconciler()
+
+	// No metrics published yet — delete should be a no-op (returns false internally).
+	r.deleteMCHMetrics(namespace, name, "test-cleanup")
+
+	// Publish some metrics, then delete.
+	hub := &operatorsv1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	r.publishMCHPhase(hub, operatorsv1.HubRunning)
+	r.publishMCHLastReconcileTimestamp(hub)
+
+	r.deleteMCHMetrics(namespace, name, "test-cleanup-after-publish")
+
+	if got := mchPhaseValue(t, namespace, name, string(operatorsv1.HubRunning)); got != 0 {
+		t.Errorf("expected phase metric to be removed after deleteMCHMetrics, got %v", got)
+	}
+	_, found := mchGaugeValue(t, mchmetrics.LastReconcileTimestampMetricName, namespace, name)
+	if found {
+		t.Error("expected last reconcile timestamp to be removed after deleteMCHMetrics")
 	}
 }
