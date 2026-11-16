@@ -101,8 +101,9 @@ spec:
               echo "FBC OCP Version label: ${fbc_ocp_version}"
 
               if [ -z "$fbc_ocp_version" ]; then
-                echo "ERROR: FBC fragment image has no 'com.redhat.fbc.openshift.version' label"
-                exit 1
+                echo "INFO: Image is not an FBC fragment (no 'com.redhat.fbc.openshift.version' label) — skipping"
+                echo -n "false" > $(results.matches.path)
+                exit 0
               fi
 
               # Strip 'v' prefix for comparison if present
