@@ -2,8 +2,8 @@
 updates:
 - file: "manifests/advanced-cluster-management.clusterserviceversion.yaml"
   update_list:
-  - search: "2.15.8"
-    replace: "2.15.8"
+  - search: "2.15.10"
+    replace: "2.15.10"
 external-images:
 # flightctl_* relatedImages on the 2.15.8 shipping CSV all pin rhel9/memcached;
 # keep that mapping rather than copying 2.16 rhem/flightctl-* tags.
