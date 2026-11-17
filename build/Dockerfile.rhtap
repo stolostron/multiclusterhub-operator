@@ -32,7 +32,7 @@ ARG BUILD_DATE="unknown"
 ARG VERSION_PKG=github.com/stolostron/multiclusterhub-operator/pkg/version
 
 # Build
-RUN CGO_ENABLED=1 go build -mod=readonly \
+RUN CGO_ENABLED=1 GOEXPERIMENT=strictfipsruntime go build -mod=readonly \
     -ldflags "-X ${VERSION_PKG}.gitVersion=${GIT_VERSION} \
               -X ${VERSION_PKG}.gitCommit=${GIT_COMMIT} \
               -X ${VERSION_PKG}.gitTreeState=${GIT_TREE_STATE} \
