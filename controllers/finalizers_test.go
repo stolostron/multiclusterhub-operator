@@ -781,3 +781,51 @@ func Test_finalizeHub_SetsTerminatingCondition_ComponentError(t *testing.T) {
 		t.Errorf("expected message to include the underlying error detail, got %q", condition.Message)
 	}
 }
+
+func TestTruncateUID(t *testing.T) {
+	tests := []struct {
+		name   string
+		uid    types.UID
+		maxLen int
+		want   string
+	}{
+		{
+			name:   "normal 36-char UUID",
+			uid:    types.UID("12345678-1234-1234-1234-123456789abc"),
+			maxLen: 5,
+			want:   "12345",
+		},
+		{
+			name:   "exact length",
+			uid:    types.UID("abcde"),
+			maxLen: 5,
+			want:   "abcde",
+		},
+		{
+			name:   "shorter than maxLen",
+			uid:    types.UID("abc"),
+			maxLen: 5,
+			want:   "abc",
+		},
+		{
+			name:   "empty UID",
+			uid:    types.UID(""),
+			maxLen: 5,
+			want:   "",
+		},
+		{
+			name:   "single character",
+			uid:    types.UID("x"),
+			maxLen: 5,
+			want:   "x",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := truncateUID(tt.uid, tt.maxLen)
+			if got != tt.want {
+				t.Errorf("truncateUID(%q, %d) = %q, want %q", tt.uid, tt.maxLen, got, tt.want)
+			}
+		})
+	}
+}
