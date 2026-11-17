@@ -2,5 +2,5 @@
 packageName: advanced-cluster-management
 channels:
 - name: release-2.14
-  currentCSV: advanced-cluster-management.v2.14.7
+  currentCSV: advanced-cluster-management.v2.14.8
 defaultChannel: release-2.14
