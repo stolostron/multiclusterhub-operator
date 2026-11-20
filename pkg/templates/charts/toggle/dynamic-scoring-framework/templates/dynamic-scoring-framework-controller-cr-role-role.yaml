@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/name: dynamic-scoring-framework
+  name: dynamic-scoring-framework-controller-cr-role
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+rules:
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscorers/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscoringconfigs
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - dynamic-scoring.open-cluster-management.io
+  resources:
+  - dynamicscoringconfigs/finalizers
+  verbs:
+  - update
