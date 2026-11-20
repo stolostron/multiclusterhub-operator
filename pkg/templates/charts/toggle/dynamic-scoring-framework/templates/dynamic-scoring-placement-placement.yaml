@@ -1,0 +1,13 @@
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: dynamic-scoring-placement
+  namespace: '{{ default "open-cluster-management" .Values.global.namespace }}'
+spec:
+  clusterSets:
+  - global
+  tolerations:
+  - key: cluster.open-cluster-management.io/unreachable
+    operator: Equal
+  - key: cluster.open-cluster-management.io/unavailable
+    operator: Equal
