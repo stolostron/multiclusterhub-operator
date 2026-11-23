@@ -13,6 +13,7 @@ import (
 
 	v1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	"github.com/stolostron/multiclusterhub-operator/pkg/utils"
+	"github.com/stolostron/multiclusterhub-operator/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -254,6 +255,68 @@ func TestRender(t *testing.T) {
 	os.Unsetenv("DIRECTORY_OVERRIDE")
 	os.Unsetenv("ACM_HUB_OCP_VERSION")
 
+}
+
+func TestRenderObservabilityMigrationCLIDownload(t *testing.T) {
+	t.Setenv("DIRECTORY_OVERRIDE", "../templates")
+	t.Setenv("ACM_HUB_OCP_VERSION", "4.19.1")
+	t.Setenv("INGRESS_DOMAIN", "apps.example.com")
+
+	mch := &v1.MultiClusterHub{
+		ObjectMeta: metav1.ObjectMeta{Name: "testmch", Namespace: "test"},
+	}
+	images := map[string]string{}
+	for _, image := range utils.GetTestImages() {
+		images[image] = "quay.io/test/test:Test"
+	}
+	templates, errs := RenderChart(utils.ConsoleChartLocation, mch, images, map[string]string{}, false, "v0")
+	if len(errs) > 0 {
+		t.Fatalf("failed to render console chart: %v", errs)
+	}
+
+	for _, template := range templates {
+		if template.GetKind() != "ConsoleCLIDownload" || template.GetName() != "acm-observability-migration-cli-downloads" {
+			continue
+		}
+		if template.GetAPIVersion() != "console.openshift.io/v1" || template.GetNamespace() != "" {
+			t.Fatalf("expected a cluster-scoped console.openshift.io/v1 resource, got %v", template.Object)
+		}
+		displayName, _, err := unstructured.NestedString(template.Object, "spec", "displayName")
+		if want := "Advanced Cluster Management Observability Migration Tool - " + version.Version; err != nil || displayName != want {
+			t.Fatalf("displayName = %q, want %q (error: %v)", displayName, want, err)
+		}
+		links, _, err := unstructured.NestedSlice(template.Object, "spec", "links")
+		if err != nil {
+			t.Fatal(err)
+		}
+		platforms := []struct {
+			archive string
+			label   string
+		}{
+			{"linux-amd64-allowlist-migration.tar.gz", "Linux for x86_64"},
+			{"linux-arm64-allowlist-migration.tar.gz", "Linux for ARM64"},
+			{"linux-ppc64le-allowlist-migration.tar.gz", "Linux for ppc64le"},
+			{"linux-s390x-allowlist-migration.tar.gz", "Linux for s390x"},
+			{"darwin-amd64-allowlist-migration.tar.gz", "Mac for x86_64"},
+			{"darwin-arm64-allowlist-migration.tar.gz", "Mac for ARM64"},
+			{"windows-amd64-allowlist-migration.zip", "Windows for x86_64"},
+			{"windows-arm64-allowlist-migration.zip", "Windows for ARM64"},
+		}
+		if len(links) != len(platforms) {
+			t.Fatalf("got %d links, want %d", len(links), len(platforms))
+		}
+		for i, platform := range platforms {
+			want := map[string]interface{}{
+				"href": "https://acm-cli-downloads.apps.example.com/" + platform.archive,
+				"text": "Download allowlist-migration for " + platform.label,
+			}
+			if !reflect.DeepEqual(links[i], want) {
+				t.Errorf("link %d = %v, want %v", i, links[i], want)
+			}
+		}
+		return
+	}
+	t.Fatal("observability migration ConsoleCLIDownload not found")
 }
 
 func TestRenderCRDs(t *testing.T) {
