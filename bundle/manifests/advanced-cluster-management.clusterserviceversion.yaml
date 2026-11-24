@@ -2000,7 +2000,7 @@ spec:
                   value: "5.1.0"
                 - name: OPERATOR_PACKAGE
                   value: advanced-cluster-management
-                image: quay.io/stolostron/multiclusterhub-operator:0.0.1
+                image: image-registry.openshift-image-registry.svc:5000/open-cluster-management/multiclusterhub-operator:latest
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
