@@ -286,7 +286,7 @@ func (r *MultiClusterHubReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	err = r.maintainImageManifestConfigmap(multiClusterHub)
+	err = r.maintainImageManifestConfigmap(ctx, multiClusterHub)
 	if err != nil {
 		r.Log.Error(err, "Failed to store image manifests in configmap")
 		condition := NewHubCondition(operatorv1.Progressing, metav1.ConditionFalse, RequirementsNotMetReason,
