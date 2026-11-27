@@ -7,8 +7,15 @@ spec:
   predicates:
   - requiredClusterSelector:
       labelSelector:
-        matchLabels:
-          acm/cnv-operator-install: 'true'
+        matchExpressions:
+        - key: acm/cnv-operator-install
+          operator: In
+          values:
+          - 'true'
+        - key: acm/cnv-operator-manual-install
+          operator: NotIn
+          values:
+          - 'true'
   - requiredClusterSelector:
       labelSelector:
         matchLabels:
