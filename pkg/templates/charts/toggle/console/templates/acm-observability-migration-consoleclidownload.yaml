@@ -1,0 +1,35 @@
+apiVersion: console.openshift.io/v1
+kind: ConsoleCLIDownload
+metadata:
+  labels:
+    app: console-chart-v2
+    chart: "console-chart-{{ .Values.hubconfig.hubVersion }}"
+    component: console
+    subcomponent: acm-cli-downloads
+    release: console
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console-chart
+  name: acm-observability-migration-cli-downloads
+spec:
+  description: |
+    The `migration` CLI converts an allowlist ConfigMap (used by the multicluster-observability-operator) into
+    equivalent ScrapeConfig and PrometheusRule resources (used by the multicluster-observability-addon).
+    Usage: `/path/to/migration <allowlist.yaml> <output-directory> [metrics_list.yaml]`
+  displayName: "Advanced Cluster Management Observability Migration Tool - {{ .Values.hubconfig.hubVersion }}"
+  links:
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-amd64-allowlist-migration.tar.gz"
+      text: Download allowlist-migration for Linux for x86_64
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-arm64-allowlist-migration.tar.gz"
+      text: Download allowlist-migration for Linux for ARM64
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-ppc64le-allowlist-migration.tar.gz"
+      text: Download allowlist-migration for Linux for ppc64le
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/linux-s390x-allowlist-migration.tar.gz"
+      text: Download allowlist-migration for Linux for s390x
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/darwin-amd64-allowlist-migration.tar.gz"
+      text: Download allowlist-migration for Mac for x86_64
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/darwin-arm64-allowlist-migration.tar.gz"
+      text: Download allowlist-migration for Mac for ARM64
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/windows-amd64-allowlist-migration.zip"
+      text: Download allowlist-migration for Windows for x86_64
+    - href: "https://acm-cli-downloads.{{ .Values.hubconfig.ocpIngress }}/windows-arm64-allowlist-migration.zip"
+      text: Download allowlist-migration for Windows for ARM64
