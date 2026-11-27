@@ -48,6 +48,10 @@ components:
           - OLM_SUBSCRIPTION_NAMESPACE
           - OLM_SUBSCRIPTION_SOURCE
           - OLM_SUBSCRIPTION_SOURCE_NAMESPACE
+          - GITOPS_CONSOLE_PLUGIN_IMAGE_PF5
+          - GITOPS_PROMOTER_IMAGE
+          - MUST_GATHER_IMAGE
+          - PROMOTER_EXTENSION_IMAGE
         exclusions:
           - readOnlyRootFilesystem
   - repo_name: multicluster-observability-operator
